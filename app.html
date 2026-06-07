@@ -1,1 +1,783 @@
-netlify/functions/news.js
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Authority Studio</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--navy:#002D72;--blue:#307FE2;--pale:#C3D7EE;--yellow:#FFD100;--white:#FFF;--off:#F4F7FC;--muted:#7A94B8;--border:rgba(0,45,114,0.12);--green:#1A8A5A;--red:#C0392B;--orange:#E67E22}
+body{font-family:'Inter',sans-serif;background:var(--off);color:var(--navy);min-height:100vh;font-size:15px}
+.topbar{background:var(--navy);border-bottom:3px solid var(--yellow);display:flex;align-items:center;justify-content:space-between;padding:0 24px;height:56px;position:sticky;top:0;z-index:100}
+.brand{display:flex;align-items:center;gap:10px}
+.bmark{width:32px;height:32px;background:var(--yellow);border-radius:6px;display:flex;align-items:center;justify-content:center;font-family:'Syne',sans-serif;font-weight:800;font-size:13px;color:var(--navy)}
+.bname{font-family:'Syne',sans-serif;font-weight:700;font-size:15px;color:var(--white)}
+.bname b{color:var(--yellow)}
+.badge{background:rgba(74,222,128,0.2);border:1px solid rgba(74,222,128,0.4);color:#4ADE80;font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:4px 10px;border-radius:4px;display:flex;align-items:center;gap:5px}
+.bdot{width:6px;height:6px;border-radius:50%;background:#4ADE80;animation:blink 2s ease-in-out infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.avchip{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:5px 12px}
+.av{width:26px;height:26px;border-radius:50%;background:var(--blue);border:2px solid var(--yellow);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:var(--white)}
+.avname{font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--white)}
+.app{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 56px)}
+.sidebar{background:var(--white);border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;overflow-y:auto}
+.ngrp{font-family:'Syne',sans-serif;font-weight:700;font-size:8px;letter-spacing:.2em;text-transform:uppercase;color:var(--pale);padding:0 18px;margin:16px 0 4px}
+.nv{display:flex;align-items:center;gap:10px;padding:10px 18px;font-weight:500;font-size:13px;color:var(--muted);cursor:pointer;border-left:3px solid transparent;transition:all .15s}
+.nv:hover{color:var(--navy);background:rgba(195,215,238,0.2)}
+.nv.on{color:var(--navy);font-weight:600;background:rgba(195,215,238,0.25);border-left-color:var(--yellow)}
+.nv.dim{opacity:.35;pointer-events:none}
+.nv-icon{font-size:16px;flex-shrink:0}
+.nbadge{margin-left:auto;background:var(--yellow);color:var(--navy);font-family:'Syne',sans-serif;font-weight:800;font-size:7px;padding:2px 6px;border-radius:3px;letter-spacing:.06em}
+.sbfoot{margin-top:auto;padding:16px 18px;border-top:1px solid var(--border)}
+.main{overflow-y:auto}
+.pane{display:none;padding:28px;max-width:1100px}
+.pane.on{display:block}
+.eye{font-weight:500;font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.ptitle{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--navy);margin-bottom:24px;line-height:1.2}
+.ptitle b{color:var(--blue)}
+.mets{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.met{background:var(--white);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:10px;padding:18px}
+.met.hl{border-top-color:var(--yellow)}
+.ml{font-weight:500;font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.mv{font-family:'Syne',sans-serif;font-weight:800;font-size:28px;color:var(--navy);line-height:1;margin-bottom:4px}
+.md{font-weight:600;font-size:11px;color:var(--green)}
+.card{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+.ctitle{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--navy);padding-bottom:10px;border-bottom:2px solid var(--yellow);margin-bottom:16px}
+.sg{display:grid;grid-template-columns:300px 1fr;gap:18px}
+.fl{margin-bottom:14px}
+.fll{font-weight:600;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:5px}
+.chip{padding:6px 12px;font-weight:600;font-size:10px;letter-spacing:.06em;text-transform:uppercase;border-radius:6px;cursor:pointer;border:1px solid;transition:all .15s}
+.chip.on{background:var(--navy);color:var(--yellow);border-color:var(--navy)}
+.chip.off{background:transparent;color:var(--muted);border-color:var(--border)}
+.chip.off:hover{border-color:var(--blue);color:var(--blue)}
+.chip.arq.on{background:var(--blue);border-color:var(--blue);color:var(--white)}
+.orow{display:flex;gap:5px}
+.obtn{flex:1;padding:8px 0;font-weight:600;font-size:12px;text-align:center;border-radius:6px;cursor:pointer;border:1px solid var(--border);color:var(--muted);background:transparent;transition:all .15s}
+.obtn.on{background:var(--navy);color:var(--yellow);border-color:var(--navy)}
+.oulbl{font-weight:400;font-size:11px;color:var(--muted);text-align:center;margin-top:5px}
+.ta{width:100%;background:var(--off);border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'Inter',sans-serif;font-weight:400;font-size:15px;color:var(--navy);resize:none;outline:none;transition:border .15s;line-height:1.7}
+.ta:focus{border-color:var(--blue)}
+.ta::placeholder{color:var(--muted)}
+.inp{width:100%;background:var(--off);border:1.5px solid var(--border);border-radius:8px;padding:12px 16px;font-family:'Inter',sans-serif;font-weight:400;font-size:15px;color:var(--navy);outline:none;transition:border .15s}
+.inp:focus{border-color:var(--blue)}
+.inp::placeholder{color:var(--muted)}
+.gbtn{width:100%;background:var(--navy);color:var(--yellow);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:14px;border:none;border-radius:8px;cursor:pointer;margin-top:10px;transition:all .2s}
+.gbtn:hover:not(:disabled){background:var(--blue);color:var(--white)}
+.gbtn:disabled{opacity:.5;cursor:not-allowed}
+.rbox{background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.rhead{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--off)}
+.rtitle{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--navy)}
+.rmeta{font-weight:500;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.empty{padding:60px 20px;text-align:center}
+.ldg{padding:60px 20px;text-align:center}
+.dots{display:flex;justify-content:center;gap:7px;margin-bottom:16px}
+.dot{width:9px;height:9px;border-radius:50%;animation:pulse 1.2s ease-in-out infinite}
+.dot:nth-child(1){background:var(--yellow)}.dot:nth-child(2){background:var(--blue);animation-delay:.2s}.dot:nth-child(3){background:var(--navy);animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.3;transform:scale(.8)}40%{opacity:1;transform:scale(1)}}
+.lt{font-weight:500;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+.ls{font-weight:300;font-size:14px;color:var(--navy);margin-top:6px}
+.pi{border-bottom:1px solid var(--border);padding:18px;cursor:pointer;transition:all .15s}
+.pi:last-child{border-bottom:none}
+.pi:hover{background:rgba(195,215,238,0.1)}
+.pi.sel{background:rgba(255,209,0,0.04);border-left:3px solid var(--yellow)}
+.pih{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.piver{font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;background:var(--navy);color:var(--yellow);padding:4px 10px;border-radius:4px}
+.pisc{font-weight:700;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+.pib{font-weight:400;font-size:15px;color:var(--navy);line-height:1.85;white-space:pre-wrap;word-break:break-word}
+.pib.coll{max-height:80px;overflow:hidden;-webkit-mask-image:linear-gradient(to bottom,black 40%,transparent);mask-image:linear-gradient(to bottom,black 40%,transparent)}
+.piacts{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap}
+.ab{padding:6px 12px;font-weight:600;font-size:9px;letter-spacing:.1em;text-transform:uppercase;border-radius:6px;border:1px solid;cursor:pointer;transition:all .15s}
+.ab.main{background:var(--navy);color:var(--yellow);border-color:var(--navy)}
+.ab.main:hover{background:var(--blue);color:var(--white)}
+.ab.ghost{background:transparent;color:var(--muted);border-color:var(--border)}
+.ab.ghost:hover{color:var(--navy);border-color:var(--navy)}
+.hw{margin-top:14px;background:var(--white);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.hgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.hside{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:16px}
+.hlbl{font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.16em;text-transform:uppercase;padding-bottom:8px;border-bottom:2px solid;margin-bottom:12px}
+.hlbl.orig{color:var(--muted);border-color:var(--pale)}
+.hlbl.out{color:var(--navy);border-color:var(--yellow)}
+.scrow{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.scbg{flex:1;height:6px;background:var(--pale);border-radius:3px}
+.scfill{height:6px;border-radius:3px;transition:width .5s}
+.scval{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--navy);min-width:32px;text-align:right}
+.step{display:flex;margin-bottom:24px;background:var(--white);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.stab{flex:1;padding:12px 8px;text-align:center;font-weight:600;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);border-right:1px solid var(--border);transition:all .15s}
+.stab:last-child{border-right:none}
+.stab.done{background:rgba(26,138,90,0.06);color:var(--green)}
+.stab.on{background:rgba(255,209,0,0.08);color:var(--navy);border-bottom:2px solid var(--yellow)}
+.sn{font-family:'Syne',sans-serif;font-weight:800;font-size:14px;display:block;margin-bottom:3px}
+.stab.on .sn{color:var(--yellow)}.stab.done .sn{color:var(--green);font-size:12px}
+.afc{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:16px}
+.afch{display:flex;align-items:flex-start;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid var(--yellow)}
+.afci{width:42px;height:42px;background:var(--navy);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.afct{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--navy)}
+.afcs{font-weight:400;font-size:13px;color:var(--muted);margin-top:3px;line-height:1.5}
+.srow{display:flex;gap:6px;flex-wrap:wrap}
+.sbtn{padding:7px 14px;font-weight:600;font-size:11px;border-radius:6px;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;text-transform:uppercase}
+.sbtn.on{background:var(--navy);color:var(--yellow);border-color:var(--navy)}
+.ynrow{display:flex;gap:8px}
+.yn{flex:1;padding:10px;font-weight:600;font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-radius:8px;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s;text-align:center}
+.yn.yes.on{background:var(--green);color:var(--white);border-color:var(--green)}
+.yn.no.on{background:var(--red);color:var(--white);border-color:var(--red)}
+.rw{display:flex;align-items:center;gap:12px}
+.ri{flex:1;accent-color:var(--navy)}
+.rv{font-family:'Syne',sans-serif;font-weight:700;font-size:16px;color:var(--navy);min-width:24px;text-align:center}
+.nbtns{display:flex;justify-content:space-between;align-items:center;margin-top:8px}
+.bnext{background:var(--navy);color:var(--yellow);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:13px 30px;border:none;border-radius:8px;cursor:pointer}
+.bnext:hover{background:var(--blue);color:var(--white)}
+.bback{background:transparent;color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.1em;text-transform:uppercase;padding:13px 22px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer}
+.bback:hover{color:var(--navy);border-color:var(--navy)}
+.banal{background:var(--yellow);color:var(--navy);font-family:'Syne',sans-serif;font-weight:700;font-size:11px;letter-spacing:.16em;text-transform:uppercase;padding:14px 32px;border:none;border-radius:8px;cursor:pointer}
+.banal:hover{background:var(--navy);color:var(--yellow)}
+.sbanner{background:var(--navy);border-radius:12px;padding:28px;display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;margin-bottom:16px}
+.scbig{width:92px;height:92px;display:flex;align-items:center;justify-content:center;position:relative;flex-shrink:0}
+.scbig svg{position:absolute;inset:0;width:100%;height:100%}
+.scbign{font-family:'Syne',sans-serif;font-weight:100;font-size:30px;color:var(--white);position:relative;z-index:1;text-align:center}
+.scnivel{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--yellow);margin-bottom:4px}
+.scdesc{font-weight:400;font-size:15px;color:rgba(195,215,238,0.8);line-height:1.65}
+.scsub{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.scsubc{background:rgba(255,255,255,0.07);border-radius:8px;padding:10px;text-align:center}
+.scsubl{font-weight:500;font-size:8px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.scsubv{font-family:'Syne',sans-serif;font-weight:800;font-size:20px;color:var(--white)}
+.cagrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.campo{background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px}
+.campoh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.campon{font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--navy)}
+.camposc{font-family:'Syne',sans-serif;font-weight:700;font-size:16px}
+.campobg{height:5px;background:var(--pale);border-radius:3px;margin-bottom:8px}
+.campob{height:5px;border-radius:3px;transition:width .8s}
+.campod{font-weight:400;font-size:14px;color:var(--muted);line-height:1.6}
+.recc{background:var(--white);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.rect{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--navy);padding-bottom:10px;border-bottom:2px solid var(--yellow);margin-bottom:14px}
+.rec{display:flex;gap:12px;padding:10px 12px;border-radius:8px;border-left:3px solid;margin-bottom:8px}
+.rec.alta{border-color:var(--red);background:rgba(192,57,43,0.04)}
+.rec.media{border-color:var(--orange);background:rgba(230,126,34,0.04)}
+.rec.baixa{border-color:var(--green);background:rgba(26,138,90,0.04)}
+.recpri{font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;min-width:90px;padding-top:1px}
+.recpri.alta{color:var(--red)}.recpri.media{color:var(--orange)}.recpri.baixa{color:var(--green)}
+.rect2{font-weight:600;font-size:13px;color:var(--navy);margin-bottom:3px}
+.recd{font-weight:400;font-size:13px;color:var(--muted);line-height:1.5}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;margin-bottom:16px}
+.calh{font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);text-align:center;padding:6px 0}
+.cald{min-height:72px;background:var(--white);border:1.5px solid var(--border);border-radius:8px;padding:6px;cursor:pointer;transition:all .15s}
+.cald:hover{border-color:var(--blue)}
+.cald.has{background:rgba(195,215,238,0.15)}
+.cald.today{border-color:var(--yellow);border-width:2px}
+.cald.empty{background:transparent;border-color:transparent;pointer-events:none}
+.caldn{font-weight:500;font-size:10px;color:var(--muted);margin-bottom:4px}
+.caldp{font-weight:600;font-size:9px;padding:3px 5px;border-radius:4px;margin-bottom:2px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.pn{background:rgba(0,45,114,0.1);color:var(--navy)}.pb{background:rgba(48,127,226,0.12);color:var(--blue)}.py{background:rgba(255,209,0,0.2);color:#7A5C00}.pg{background:rgba(26,138,90,0.1);color:var(--green)}
+.ti{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border)}
+.ti:last-child{border-bottom:none}
+.trk{font-family:'Syne',sans-serif;font-weight:300;font-size:18px;color:var(--pale);min-width:18px}
+.tin{flex:1}
+.tnm{font-weight:600;font-size:14px;color:var(--navy)}
+.tmt{font-weight:400;font-size:12px;color:var(--muted);margin-top:2px}
+.tbadge{padding:4px 10px;border-radius:4px;font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;flex-shrink:0}
+.th{background:rgba(192,57,43,0.1);color:var(--red)}.tu{background:rgba(255,209,0,0.15);color:#A07800}.tok{background:rgba(48,127,226,0.1);color:var(--blue)}
+.ubtn{background:var(--navy);color:var(--yellow);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:6px 12px;border:none;border-radius:6px;cursor:pointer;flex-shrink:0}
+.ubtn:hover{background:var(--blue);color:var(--white)}
+.sldr{margin-bottom:16px}
+.sldh{display:flex;justify-content:space-between;margin-bottom:5px}
+.sldhname{font-weight:600;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.sldhval{font-family:'Syne',sans-serif;font-weight:700;font-size:12px;color:var(--navy)}
+.brow{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.blbl{font-weight:500;font-size:9px;color:var(--muted);min-width:42px;text-transform:uppercase;letter-spacing:.06em}
+.bout{flex:1;height:20px;background:var(--off);border-radius:6px;overflow:hidden}
+.bin{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:8px;transition:width .8s}
+.binlbl{font-weight:700;font-size:10px;color:var(--white)}
+/* NEWS */
+.news-filters{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
+.nf{padding:7px 14px;font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;border-radius:8px;cursor:pointer;border:1.5px solid var(--border);color:var(--muted);background:transparent;transition:all .15s}
+.nf.on{background:var(--navy);color:var(--yellow);border-color:var(--navy)}
+.nf:hover{border-color:var(--blue);color:var(--blue)}
+.news-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.nc{background:var(--white);border:1.5px solid var(--border);border-radius:12px;overflow:hidden;transition:all .2s}
+.nc:hover{border-color:var(--blue);box-shadow:0 4px 20px rgba(48,127,226,0.1);transform:translateY(-3px)}
+.nc-img{width:100%;height:140px;object-fit:cover;display:block;background:var(--off)}
+.nc-ph{width:100%;height:140px;background:linear-gradient(135deg,var(--off),var(--pale));display:flex;align-items:center;justify-content:center;font-size:36px}
+.nc-body{padding:16px}
+.nc-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.nc-src{font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--blue)}
+.nc-date{font-weight:500;font-size:10px;color:var(--muted)}
+.nc-title{font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--navy);line-height:1.4;margin-bottom:8px}
+.nc-desc{font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:14px}
+.nc-acts{display:flex;gap:8px}
+.nc-post{background:var(--navy);color:var(--yellow);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:8px 12px;border:none;border-radius:6px;cursor:pointer;flex:1;transition:all .15s}
+.nc-post:hover{background:var(--blue);color:var(--white)}
+.nc-read{background:transparent;color:var(--muted);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.1em;text-transform:uppercase;padding:8px 12px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer;text-decoration:none;display:flex;align-items:center;transition:all .15s}
+.nc-read:hover{color:var(--navy);border-color:var(--navy)}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--navy);color:var(--yellow);font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.14em;text-transform:uppercase;padding:12px 20px;border-radius:8px;border-left:3px solid var(--yellow);z-index:9999;opacity:0;transform:translateY(8px);transition:all .25s;pointer-events:none}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand"><div class="bmark">AS</div><div class="bname">AUTHORITY <b>STUDIO</b></div></div>
+  <div style="display:flex;align-items:center;gap:12px">
+    <div class="badge"><div class="bdot"></div>IA ATIVA</div>
+    <div class="avchip"><div class="av">CD</div><span class="avname">CAROL DOSTAL</span></div>
+  </div>
+</div>
+<div class="app">
+  <div class="sidebar">
+    <div class="ngrp">PRINCIPAL</div>
+    <div class="nv on" onclick="go('dash')"><div class="nv-icon">🏠</div>DASHBOARD</div>
+    <div class="nv" onclick="go('studio')"><div class="nv-icon">✍️</div>AI CONTENT STUDIO<span class="nbadge">LIVE</span></div>
+    <div class="nv" onclick="go('humanizer')"><div class="nv-icon">🔁</div>HUMANIZER ENGINE</div>
+    <div class="nv" onclick="go('auditoria')"><div class="nv-icon">📊</div>AUDITORIA<span class="nbadge">NOVO</span></div>
+    <div class="ngrp">INTELIGÊNCIA</div>
+    <div class="nv" onclick="go('noticias')"><div class="nv-icon">📰</div>NOTÍCIAS<span class="nbadge">NOVO</span></div>
+    <div class="nv" onclick="go('calendario')"><div class="nv-icon">📅</div>CALENDÁRIO<span class="nbadge">NOVO</span></div>
+    <div class="nv" onclick="go('trend')"><div class="nv-icon">📡</div>TREND RADAR</div>
+    <div class="nv" onclick="go('growth')"><div class="nv-icon">📈</div>GROWTH FORECAST</div>
+    <div class="ngrp">EM BREVE</div>
+    <div class="nv dim"><div class="nv-icon">🔍</div>ANÁLISE DE PERFIL</div>
+    <div class="nv dim"><div class="nv-icon">🏆</div>BENCHMARK</div>
+    <div class="sbfoot"><div style="font-weight:400;font-size:11px;color:var(--muted)">authoritystudio.io · v2.0</div></div>
+  </div>
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div id="dash" class="pane on">
+      <div class="eye">PERFIL PESSOAL · ÚLTIMOS 30 DIAS</div>
+      <div class="ptitle">BOM DIA <b>CAROL</b> 👋</div>
+      <div class="mets">
+        <div class="met hl"><div class="ml">SEGUIDORES</div><div class="mv">12.847</div><div class="md">↑ +847 ESTE MÊS</div></div>
+        <div class="met"><div class="ml">ENGAJAMENTO</div><div class="mv">4,2%</div><div class="md">↑ +0,8PP VS ANT.</div></div>
+        <div class="met"><div class="ml">IMPRESSÕES</div><div class="mv">94K</div><div class="md">↑ +22% VS ANT.</div></div>
+        <div class="met hl"><div class="ml">SCORE AUTORIDADE</div><div class="mv">78<span style="font-size:14px;font-weight:300;color:var(--muted)">/100</span></div><div class="md">↑ +5 PONTOS</div></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div style="background:rgba(255,209,0,0.08);border:1px solid rgba(255,209,0,0.3);border-left:4px solid var(--yellow);border-radius:12px;padding:20px;cursor:pointer" onclick="go('auditoria')">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#A07800;margin-bottom:8px">📊 AUDITORIA PENDENTE</div>
+          <div style="font-size:14px;color:var(--navy);line-height:1.6;margin-bottom:12px">Descubra o que está travando seu score. Diagnóstico completo em 5 minutos.</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--navy)">AUDITAR AGORA →</div>
+        </div>
+        <div style="background:rgba(195,215,238,0.2);border:1px solid var(--pale);border-left:4px solid var(--blue);border-radius:12px;padding:20px;cursor:pointer" onclick="go('noticias')">
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--blue);margin-bottom:8px">📰 NOTÍCIAS DO DIA</div>
+          <div style="font-size:14px;color:var(--navy);line-height:1.6;margin-bottom:12px">Exame, Fast Company, HBR, Wired — veja o que está em alta e crie um post agora.</div>
+          <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:11px;color:var(--navy)">VER NOTÍCIAS →</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI CONTENT STUDIO -->
+    <div id="studio" class="pane">
+      <div class="eye">MÓDULO PRINCIPAL · IA ATIVA</div>
+      <div class="ptitle">AI CONTENT <b>STUDIO</b></div>
+      <div class="sg">
+        <div><div class="card">
+          <div class="ctitle">ESTRATÉGIA DO POST</div>
+          <div class="fl"><span class="fll">OBJETIVO</span>
+            <div class="chips" id="c-obj">
+              <div class="chip on" data-v="autoridade" onclick="tc(this,'c-obj')">AUTORIDADE</div>
+              <div class="chip off" data-v="engajamento" onclick="tc(this,'c-obj')">ENGAJAMENTO</div>
+              <div class="chip off" data-v="demanda" onclick="tc(this,'c-obj')">DEMANDA</div>
+              <div class="chip off" data-v="networking" onclick="tc(this,'c-obj')">NETWORKING</div>
+            </div>
+          </div>
+          <div class="fl"><span class="fll">ÂNGULO</span>
+            <div class="chips" id="c-ang">
+              <div class="chip on" data-v="dado_surpresa" onclick="tc(this,'c-ang')">DADO SURPRESA</div>
+              <div class="chip off" data-v="opiniao" onclick="tc(this,'c-ang')">OPINIÃO</div>
+              <div class="chip off" data-v="case" onclick="tc(this,'c-ang')">CASE PESSOAL</div>
+              <div class="chip off" data-v="contrario" onclick="tc(this,'c-ang')">CONTRÁRIO</div>
+              <div class="chip off" data-v="lista" onclick="tc(this,'c-ang')">LISTA DE VALOR</div>
+            </div>
+          </div>
+          <div class="fl"><span class="fll">ARQUÉTIPO</span>
+            <div class="chips" id="c-arq">
+              <div class="chip arq on" data-v="autoridade_tecnica" onclick="tc(this,'c-arq')">AUTORIDADE TÉCNICA</div>
+              <div class="chip arq off" data-v="visionario" onclick="tc(this,'c-arq')">VISIONÁRIO</div>
+              <div class="chip arq off" data-v="educador" onclick="tc(this,'c-arq')">EDUCADOR</div>
+              <div class="chip arq off" data-v="provocador" onclick="tc(this,'c-arq')">PROVOCADOR</div>
+              <div class="chip arq off" data-v="narrador" onclick="tc(this,'c-arq')">NARRADOR</div>
+            </div>
+          </div>
+          <div class="fl"><span class="fll">NÍVEL DE OUSADIA</span>
+            <div class="orow"><button class="obtn" onclick="ou(1)">1</button><button class="obtn" onclick="ou(2)">2</button><button class="obtn on" onclick="ou(3)">3</button><button class="obtn" onclick="ou(4)">4</button><button class="obtn" onclick="ou(5)">5</button></div>
+            <div class="oulbl" id="oulbl">EQUILIBRADO — TOM ASSERTIVO</div>
+          </div>
+          <div class="fl"><span class="fll">TEMA DO POST</span><textarea id="tema" class="ta" rows="4" placeholder="Ex: IA generativa no marketing B2B. 82% dos CMOs já usam mas só 12% veem resultado real..."></textarea></div>
+          <div class="fl"><span class="fll">PÚBLICO-ALVO (OPCIONAL)</span><input id="publico" type="text" class="inp" placeholder="Ex: CMOs e diretores de marketing B2B"></div>
+          <button class="gbtn" id="gbtn" onclick="gerar()"><span id="gbtntxt">GERAR 3 VERSÕES COM IA</span></button>
+        </div></div>
+        <div>
+          <div class="rbox">
+            <div class="rhead"><div class="rtitle">VERSÕES GERADAS</div><div class="rmeta" id="rmeta">AGUARDANDO</div></div>
+            <div id="sempty" class="empty"><div style="font-size:32px;opacity:.2;margin-bottom:12px">✦</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:4px">PRONTO PARA CRIAR</div><div style="font-weight:400;font-size:11px;color:var(--pale);text-transform:uppercase;letter-spacing:.06em">PREENCHA O TEMA E CLIQUE EM GERAR</div></div>
+            <div id="sload" class="ldg" style="display:none"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="lt">AUTHORITY STUDIO IA</div><div class="ls" id="lstep">ANALISANDO...</div></div>
+            <div id="sres" style="display:none"><div id="postslist"></div></div>
+          </div>
+          <div id="hookswrap" class="hw" style="display:none">
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--off)"><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--navy)">HOOKS DE ALTA PERFORMANCE</div><div style="font-weight:500;font-size:10px;color:var(--muted)">5 OPÇÕES</div></div>
+            <div id="hookslist"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HUMANIZER -->
+    <div id="humanizer" class="pane">
+      <div class="eye">REMOVE LINGUAGEM ROBÓTICA · ADAPTA AO SEU ESTILO</div>
+      <div class="ptitle">HUMANIZER <b>ENGINE</b></div>
+      <div style="background:rgba(195,215,238,0.3);border:1px solid var(--pale);border-left:3px solid var(--blue);border-radius:10px;padding:12px 16px;margin-bottom:18px;font-size:14px;color:var(--navy);line-height:1.6"><b style="font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);display:block;margin-bottom:4px">COMO FUNCIONA</b>Cole qualquer texto artificial. A IA reescreve no estilo de Carolina Dostal: direto, parágrafos curtos, sem clichês.</div>
+      <div class="hgrid">
+        <div class="hside">
+          <div class="hlbl orig">TEXTO ORIGINAL</div>
+          <div style="font-weight:600;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">HUMAN SCORE</div>
+          <div class="scrow"><div class="scbg"><div class="scfill" id="osbar" style="width:30%;background:var(--pale)"></div></div><div class="scval" id="osval">30</div></div>
+          <textarea id="humin" class="ta" rows="12" placeholder="Cole aqui o texto que parece artificial..." oninput="calcOs()"></textarea>
+          <button class="gbtn" id="hbtn" onclick="humanizar()" style="margin-top:10px">HUMANIZAR AGORA</button>
+        </div>
+        <div class="hside">
+          <div class="hlbl out">TEXTO HUMANIZADO</div>
+          <div style="font-weight:600;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px">HUMAN SCORE</div>
+          <div class="scrow"><div class="scbg"><div class="scfill" id="hsbar" style="width:0%;background:var(--green)"></div></div><div class="scval" id="hsval">—</div></div>
+          <div id="hload" style="display:none;padding:40px;text-align:center"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="lt">HUMANIZANDO...</div></div>
+          <textarea id="humout" class="ta" rows="12" placeholder="O texto humanizado aparece aqui..." readonly></textarea>
+          <button onclick="cpEl('humout')" style="width:100%;margin-top:10px;background:transparent;color:var(--navy);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:9px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer">COPIAR TEXTO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- AUDITORIA -->
+    <div id="auditoria" class="pane" style="max-width:880px">
+      <div class="eye">DIAGNÓSTICO COMPLETO · IA ESTRATÉGICA</div>
+      <div class="ptitle" style="margin-bottom:6px">AUDITORIA DE <b>PERFIL</b></div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:24px;line-height:1.6">Responda as perguntas. A IA gera seu score de autoridade com recomendações priorizadas.</div>
+      <div class="step">
+        <div class="stab on" id="st0"><span class="sn">1</span>IDENTIFICAÇÃO</div>
+        <div class="stab" id="st1"><span class="sn">2</span>VISUAL</div>
+        <div class="stab" id="st2"><span class="sn">3</span>TEXTO</div>
+        <div class="stab" id="st3"><span class="sn">4</span>CONTEÚDO</div>
+        <div class="stab" id="st4"><span class="sn">5</span>AUTORIDADE</div>
+      </div>
+      <div id="as0">
+        <div class="afc"><div class="afch"><div class="afci">👤</div><div><div class="afct">IDENTIFICAÇÃO DO PERFIL</div><div class="afcs">Informações básicas para contextualizar a análise.</div></div></div>
+          <div class="fl"><span class="fll">URL DO SEU LINKEDIN</span><input id="aurl" type="text" class="inp" placeholder="linkedin.com/in/seuperfil"></div>
+          <div class="fl"><span class="fll">SEU NOME COMPLETO</span><input id="anome" type="text" class="inp" placeholder="Ex: Carolina Dostal"></div>
+          <div class="fl"><span class="fll">SEU SETOR / NICHO</span><input id="asetor" type="text" class="inp" placeholder="Ex: Marketing Digital, RH, Tecnologia..."></div>
+          <div class="fl"><span class="fll">OBJETIVO NO LINKEDIN</span><div class="srow" id="aobj"><button class="sbtn" onclick="asel('aobj',this)">AUTORIDADE</button><button class="sbtn" onclick="asel('aobj',this)">NETWORKING</button><button class="sbtn" onclick="asel('aobj',this)">GERAÇÃO DE DEMANDA</button><button class="sbtn" onclick="asel('aobj',this)">EMPREGO</button><button class="sbtn" onclick="asel('aobj',this)">VISIBILIDADE</button></div></div>
+        </div>
+        <div class="nbtns"><div></div><button class="bnext" onclick="anext()">PRÓXIMO →</button></div>
+      </div>
+      <div id="as1" style="display:none">
+        <div class="afc"><div class="afch"><div class="afci">🖼</div><div><div class="afct">PERFIL VISUAL</div><div class="afcs">Avalie os elementos visuais do seu perfil.</div></div></div>
+          <div class="fl"><span class="fll">FOTO DE PERFIL — NOTA (1 A 10)</span><div class="rw"><input type="range" class="ri" id="afoto" min="1" max="10" value="7" oninput="this.nextElementSibling.textContent=this.value"><span class="rv">7</span></div></div>
+          <div class="fl"><span class="fll">FOTO PROFISSIONAL (NÃO SELFIE)?</span><div class="ynrow"><button class="yn yes" onclick="ayn('afotoprof',this,'sim')">SIM</button><button class="yn no" onclick="ayn('afotoprof',this,'nao')">NÃO</button></div><input type="hidden" id="afotoprof" value=""></div>
+          <div class="fl"><span class="fll">BANNER — NOTA (1 A 10)</span><div class="rw"><input type="range" class="ri" id="abanner" min="1" max="10" value="6" oninput="this.nextElementSibling.textContent=this.value"><span class="rv">6</span></div></div>
+          <div class="fl"><span class="fll">BANNER TEM PROPOSTA DE VALOR?</span><div class="ynrow"><button class="yn yes" onclick="ayn('abannertxt',this,'sim')">SIM</button><button class="yn no" onclick="ayn('abannertxt',this,'nao')">NÃO</button></div><input type="hidden" id="abannertxt" value=""></div>
+        </div>
+        <div class="nbtns"><button class="bback" onclick="aprev()">← VOLTAR</button><button class="bnext" onclick="anext()">PRÓXIMO →</button></div>
+      </div>
+      <div id="as2" style="display:none">
+        <div class="afc"><div class="afch"><div class="afci">✍</div><div><div class="afct">HEADLINE E ABOUT</div><div class="afcs">Cole os textos atuais para a IA analisar.</div></div></div>
+          <div class="fl"><span class="fll">SUA HEADLINE ATUAL</span><textarea id="aheadline" class="ta" rows="2" placeholder="Ex: Consultora de Marketing Digital | LinkedIn Strategy | Ajudo executivos a construir autoridade"></textarea></div>
+          <div class="fl"><span class="fll">SEU ABOUT ATUAL</span><textarea id="aabout" class="ta" rows="5" placeholder="Cole aqui o texto completo do seu about..."></textarea></div>
+          <div class="fl"><span class="fll">SEU ABOUT TEM UM CTA?</span><div class="ynrow"><button class="yn yes" onclick="ayn('acta',this,'sim')">SIM</button><button class="yn no" onclick="ayn('acta',this,'nao')">NÃO</button></div><input type="hidden" id="acta" value=""></div>
+        </div>
+        <div class="nbtns"><button class="bback" onclick="aprev()">← VOLTAR</button><button class="bnext" onclick="anext()">PRÓXIMO →</button></div>
+      </div>
+      <div id="as3" style="display:none">
+        <div class="afc"><div class="afch"><div class="afci">📊</div><div><div class="afct">CONTEÚDO E CONSISTÊNCIA</div><div class="afcs">Como está sua atividade de publicações.</div></div></div>
+          <div class="fl"><span class="fll">QUANTAS VEZES POSTA POR SEMANA?</span><div class="srow" id="afreq"><button class="sbtn" onclick="asel('afreq',this)">NUNCA</button><button class="sbtn" onclick="asel('afreq',this)">1X</button><button class="sbtn" onclick="asel('afreq',this)">2-3X</button><button class="sbtn" onclick="asel('afreq',this)">4-5X</button><button class="sbtn" onclick="asel('afreq',this)">TODO DIA</button></div></div>
+          <div class="fl"><span class="fll">HÁ QUANTO TEMPO POSTA COM REGULARIDADE?</span><div class="srow" id="atempo"><button class="sbtn" onclick="asel('atempo',this)">MENOS DE 1 MÊS</button><button class="sbtn" onclick="asel('atempo',this)">1-3 MESES</button><button class="sbtn" onclick="asel('atempo',this)">3-6 MESES</button><button class="sbtn" onclick="asel('atempo',this)">6-12 MESES</button><button class="sbtn" onclick="asel('atempo',this)">MAIS DE 1 ANO</button></div></div>
+          <div class="fl"><span class="fll">TEM SEÇÃO FEATURED PREENCHIDA?</span><div class="ynrow"><button class="yn yes" onclick="ayn('afeatured',this,'sim')">SIM</button><button class="yn no" onclick="ayn('afeatured',this,'nao')">NÃO</button></div><input type="hidden" id="afeatured" value=""></div>
+          <div class="fl"><span class="fll">POSTS COM TEMA PRINCIPAL DEFINIDO?</span><div class="ynrow"><button class="yn yes" onclick="ayn('atemadef',this,'sim')">SIM</button><button class="yn no" onclick="ayn('atemadef',this,'nao')">NÃO</button></div><input type="hidden" id="atemadef" value=""></div>
+        </div>
+        <div class="nbtns"><button class="bback" onclick="aprev()">← VOLTAR</button><button class="bnext" onclick="anext()">PRÓXIMO →</button></div>
+      </div>
+      <div id="as4" style="display:none">
+        <div class="afc"><div class="afch"><div class="afci">🏆</div><div><div class="afct">PROVA SOCIAL E AUTORIDADE</div><div class="afcs">Últimas informações para completar o diagnóstico.</div></div></div>
+          <div class="fl"><span class="fll">QUANTAS RECOMENDAÇÕES VOCÊ TEM?</span><div class="srow" id="arecs"><button class="sbtn" onclick="asel('arecs',this)">NENHUMA</button><button class="sbtn" onclick="asel('arecs',this)">1-3</button><button class="sbtn" onclick="asel('arecs',this)">4-10</button><button class="sbtn" onclick="asel('arecs',this)">MAIS DE 10</button></div></div>
+          <div class="fl"><span class="fll">QUANTOS SEGUIDORES VOCÊ TEM?</span><div class="srow" id="asegs"><button class="sbtn" onclick="asel('asegs',this)">MENOS DE 500</button><button class="sbtn" onclick="asel('asegs',this)">500-2K</button><button class="sbtn" onclick="asel('asegs',this)">2K-10K</button><button class="sbtn" onclick="asel('asegs',this)">10K-50K</button><button class="sbtn" onclick="asel('asegs',this)">MAIS DE 50K</button></div></div>
+          <div class="fl"><span class="fll">TEM CERTIFICAÇÕES OU PRÊMIOS NO PERFIL?</span><div class="ynrow"><button class="yn yes" onclick="ayn('acert',this,'sim')">SIM</button><button class="yn no" onclick="ayn('acert',this,'nao')">NÃO</button></div><input type="hidden" id="acert" value=""></div>
+          <div class="fl"><span class="fll">ALGO QUE A IA DEVE CONSIDERAR (OPCIONAL)</span><textarea id="aobs" class="ta" rows="3" placeholder="Ex: quero crescer no B2B, meu diferencial é a experiência internacional..."></textarea></div>
+        </div>
+        <div class="nbtns"><button class="bback" onclick="aprev()">← VOLTAR</button><button class="banal" onclick="analisar()">ANALISAR PERFIL COM IA</button></div>
+      </div>
+      <div id="aload" style="display:none"><div class="ldg" style="padding:80px 20px"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="lt">AUTHORITY STUDIO IA</div><div class="ls" id="alstep">ANALISANDO SEU PERFIL...</div></div></div>
+      <div id="ares" style="display:none"><div id="arescont"></div></div>
+    </div>
+
+    <!-- NOTÍCIAS -->
+    <div id="noticias" class="pane">
+      <div class="eye">FEEDS RSS · EXAME · FAST COMPANY · HBR · WIRED · MIT</div>
+      <div class="ptitle">NOTÍCIAS <b>& TENDÊNCIAS</b></div>
+      <div class="news-filters">
+        <button class="nf on" onclick="filterNews('todos',this)">TODOS</button>
+        <button class="nf" onclick="filterNews('Brasil',this)">🇧🇷 BRASIL</button>
+        <button class="nf" onclick="filterNews('Internacional',this)">🌎 INTERNACIONAL</button>
+        <button class="nf" onclick="filterNews('Liderança',this)">👑 LIDERANÇA</button>
+        <button class="nf" onclick="filterNews('Tecnologia',this)">💻 TECNOLOGIA</button>
+        <button id="news-refresh" onclick="loadNews()" style="margin-left:auto;background:transparent;border:1.5px solid var(--border);border-radius:8px;padding:8px 16px;font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer">↻ ATUALIZAR</button>
+      </div>
+      <div id="news-load" class="ldg" style="display:none"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="lt">BUSCANDO NOTÍCIAS...</div><div class="ls">Carregando Exame, Fast Company, HBR, Wired...</div></div>
+      <div id="news-err" style="display:none;background:rgba(192,57,43,0.05);border:1px solid rgba(192,57,43,0.2);border-radius:12px;padding:32px;text-align:center"><div style="font-size:32px;margin-bottom:12px">📡</div><div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--red);margin-bottom:8px">ERRO AO CARREGAR</div><div style="font-size:13px;color:var(--muted);margin-bottom:16px">Verifique sua conexão e tente novamente.</div><button onclick="loadNews()" style="background:var(--navy);color:var(--yellow);font-family:'Syne',sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:10px 20px;border:none;border-radius:8px;cursor:pointer">TENTAR NOVAMENTE</button></div>
+      <div id="news-grid" class="news-grid"></div>
+    </div>
+
+    <!-- CALENDARIO -->
+    <div id="calendario" class="pane">
+      <div class="eye">30 DIAS DE CONTEÚDO · IA ESTRATÉGICA</div>
+      <div class="ptitle">CALENDÁRIO <b>EDITORIAL</b></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+        <div style="display:flex;gap:14px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:6px;font-weight:500;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;background:rgba(0,45,114,0.4);border-radius:2px"></div>AUTORIDADE</div>
+          <div style="display:flex;align-items:center;gap:6px;font-weight:500;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;background:rgba(48,127,226,0.4);border-radius:2px"></div>ENGAJAMENTO</div>
+          <div style="display:flex;align-items:center;gap:6px;font-weight:500;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;background:rgba(255,209,0,0.5);border-radius:2px"></div>DEMANDA</div>
+          <div style="display:flex;align-items:center;gap:6px;font-weight:500;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;background:rgba(26,138,90,0.4);border-radius:2px"></div>PESSOAL</div>
+        </div>
+        <button class="gbtn" id="calbtn" onclick="gerarCal()" style="width:auto;margin-top:0;padding:12px 22px"><span id="calbtntxt">GERAR CALENDÁRIO COM IA</span></button>
+      </div>
+      <div id="calloading" style="display:none;text-align:center;padding:48px"><div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div><div class="lt">GERANDO CALENDÁRIO...</div><div class="ls" id="calstep">PLANEJANDO PILARES...</div></div>
+      <div id="calgrid" class="calgrid"></div>
+    </div>
+
+    <!-- TREND -->
+    <div id="trend" class="pane">
+      <div class="eye">TEMAS EM ALTA · ATUALIZADO HOJE</div>
+      <div class="ptitle">TREND <b>RADAR</b></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+        <div class="card"><div class="ctitle">TEMAS EM ALTA — SEU NICHO</div>
+          <div class="ti"><div class="trk">01</div><div class="tin"><div class="tnm">IA Generativa no RH e People Analytics</div><div class="tmt">+340% menções · Janela: 4 dias</div></div><span class="tbadge th">QUENTE</span><button class="ubtn" onclick="usarTrend('IA Generativa no RH e People Analytics')">USAR</button></div>
+          <div class="ti"><div class="trk">02</div><div class="tin"><div class="tnm">Liderança feminina em tech e startups</div><div class="tmt">+180% menções · Alinhado ao seu arquétipo</div></div><span class="tbadge tu">SUBINDO</span><button class="ubtn" onclick="usarTrend('Lideranca feminina em tech')">USAR</button></div>
+          <div class="ti"><div class="trk">03</div><div class="tin"><div class="tnm">Neuromarketing e decisão de compra B2B</div><div class="tmt">+95% menções · Sobreposição alta</div></div><span class="tbadge tu">SUBINDO</span><button class="ubtn" onclick="usarTrend('Neuromarketing B2B')">USAR</button></div>
+          <div class="ti"><div class="trk">04</div><div class="tin"><div class="tnm">Estratégia de conteúdo LinkedIn 2026</div><div class="tmt">Seu tema core · Saturação média</div></div><span class="tbadge tok">ESTÁVEL</span><button class="ubtn" onclick="usarTrend('Estrategia conteudo LinkedIn 2026')">USAR</button></div>
+          <div class="ti"><div class="trk">05</div><div class="tin"><div class="tnm">Branding pessoal para executivos pós-IA</div><div class="tmt">Emergente · Poucos criadores ainda</div></div><span class="tbadge tu">SUBINDO</span><button class="ubtn" onclick="usarTrend('Branding pessoal executivos pos-IA')">USAR</button></div>
+        </div>
+        <div class="card"><div class="ctitle">GERAR POST SOBRE TENDÊNCIA</div>
+          <div style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.6">Clique em USAR ou escreva um tema abaixo.</div>
+          <div class="fl"><span class="fll">TEMA SELECIONADO</span><input id="trendtema" type="text" class="inp" placeholder="Clique em USAR ou digite um tema..."></div>
+          <button class="gbtn" id="trendbtn" onclick="gerarPostTrend()"><span id="trendbtntxt">GERAR POST COM IA</span></button>
+          <div id="trendresult" style="display:none;margin-top:16px;background:var(--off);border:1.5px solid var(--border);border-radius:10px;padding:14px">
+            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px">POST GERADO</div>
+            <div id="trendposttext" style="font-weight:400;font-size:15px;color:var(--navy);line-height:1.8;white-space:pre-wrap"></div>
+            <button onclick="cpTrend()" style="margin-top:12px;background:transparent;color:var(--navy);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:8px 16px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer">COPIAR POST</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GROWTH -->
+    <div id="growth" class="pane">
+      <div class="eye">PROJEÇÃO DE CRESCIMENTO · SIMULADOR</div>
+      <div class="ptitle">GROWTH <b>FORECAST</b></div>
+      <div style="display:grid;grid-template-columns:320px 1fr;gap:18px">
+        <div><div class="card"><div class="ctitle">PARÂMETROS ATUAIS</div>
+          <div class="sldr"><div class="sldh"><span class="sldhname">SEGUIDORES ATUAIS</span><span class="sldhval" id="vsegs">12.847</span></div><input type="range" class="ri" id="slsegs" min="100" max="100000" step="100" value="12847" oninput="document.getElementById('vsegs').textContent=parseInt(this.value).toLocaleString('pt-BR');calcF()"></div>
+          <div class="sldr"><div class="sldh"><span class="sldhname">CRESCIMENTO MENSAL</span><span class="sldhval" id="vcresc">847</span></div><input type="range" class="ri" id="slcresc" min="10" max="5000" step="10" value="847" oninput="document.getElementById('vcresc').textContent=parseInt(this.value).toLocaleString('pt-BR');calcF()"></div>
+          <div class="sldr"><div class="sldh"><span class="sldhname">POSTS POR SEMANA</span><span class="sldhval" id="vposts">3</span></div><input type="range" class="ri" id="slposts" min="1" max="7" step="1" value="3" oninput="document.getElementById('vposts').textContent=this.value;calcF()"></div>
+        </div></div>
+        <div>
+          <div class="card"><div class="ctitle">PROJEÇÃO DE SEGUIDORES</div>
+            <div class="brow"><div class="blbl">ATUAL</div><div class="bout"><div class="bin" id="bar0" style="width:20%;background:var(--pale)"><span class="binlbl" id="lbl0">12.847</span></div></div></div>
+            <div class="brow"><div class="blbl">30 DIAS</div><div class="bout"><div class="bin" id="bar1" style="width:25%;background:var(--blue)"><span class="binlbl" id="lbl1">13.694</span></div></div></div>
+            <div class="brow"><div class="blbl">60 DIAS</div><div class="bout"><div class="bin" id="bar2" style="width:32%;background:var(--blue)"><span class="binlbl" id="lbl2">14.541</span></div></div></div>
+            <div class="brow"><div class="blbl">90 DIAS</div><div class="bout"><div class="bin" id="bar3" style="width:38%;background:var(--navy)"><span class="binlbl" id="lbl3">15.388</span></div></div></div>
+            <div class="brow"><div class="blbl">6 MESES</div><div class="bout"><div class="bin" id="bar4" style="width:55%;background:var(--navy)"><span class="binlbl" id="lbl4">17.929</span></div></div></div>
+            <div class="brow"><div class="blbl">1 ANO</div><div class="bout"><div class="bin" id="bar5" style="width:80%;background:var(--yellow)"><span class="binlbl" id="lbl5" style="color:var(--navy)">23.011</span></div></div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px">
+            <div style="background:var(--white);border:1px solid var(--border);border-top:3px solid var(--yellow);border-radius:10px;padding:16px;text-align:center"><div style="font-weight:600;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">META 20K</div><div id="meta20k" style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy)">86 dias</div></div>
+            <div style="background:var(--white);border:1px solid var(--border);border-top:3px solid var(--blue);border-radius:10px;padding:16px;text-align:center"><div style="font-weight:600;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">META 50K</div><div id="meta50k" style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy)">440 dias</div></div>
+            <div style="background:var(--white);border:1px solid var(--border);border-top:3px solid var(--green);border-radius:10px;padding:16px;text-align:center"><div style="font-weight:600;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:8px">EM 1 ANO</div><div style="font-family:'Syne',sans-serif;font-weight:800;font-size:22px;color:var(--navy)" id="meta1ano">23.011</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+<script>
+var PANELS=['dash','studio','humanizer','auditoria','noticias','calendario','trend','growth'];
+var _newsLoaded=false;
+function go(id){
+  PANELS.forEach(function(p){var el=document.getElementById(p);if(el)el.classList.remove('on');});
+  var el=document.getElementById(id);if(el)el.classList.add('on');
+  var nvs=document.querySelectorAll('.nv:not(.dim)');
+  nvs.forEach(function(n){n.classList.remove('on');});
+  var map={dash:0,studio:1,humanizer:2,auditoria:3,noticias:4,calendario:5,trend:6,growth:7};
+  if(map[id]!==undefined&&nvs[map[id]])nvs[map[id]].classList.add('on');
+  if(id==='noticias'&&!_newsLoaded){_newsLoaded=true;loadNews();}
+}
+var _posts=[];var S={obj:'autoridade',ang:'dado_surpresa',arq:'autoridade_tecnica',ou:3};
+var ouL={1:'CONSERVADOR',2:'MODERADO',3:'EQUILIBRADO — ASSERTIVO',4:'OUSADO — PROVOCATIVO',5:'ARROJADO — DESAFIADOR'};
+function toast(m){var t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2400);}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');}
+function cpEl(id){var el=document.getElementById(id);if(!el||!el.value)return;navigator.clipboard.writeText(el.value).then(function(){toast('COPIADO!');});}
+async function api(payload){
+  var r=await fetch('/.netlify/functions/claude',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+  if(!r.ok){var e=await r.json().catch(function(){return{};});throw new Error(e.error||'Erro '+r.status);}
+  return r.json();
+}
+function safeJSON(raw){
+  if(!raw||raw.trim()==='') throw new Error('Resposta vazia');
+  var t=raw.replace(/```json\s*/gi,'').replace(/```\s*/gi,'').trim();
+  var s=t.indexOf('{'),e=t.lastIndexOf('}');
+  if(s>=0&&e>s)t=t.slice(s,e+1);
+  t=t.replace(/,(\s*[}\]])/g,'$1');
+  try{return JSON.parse(t);}catch(ex){throw new Error('Tente novamente');}
+}
+function tc(el,gid){document.getElementById(gid).querySelectorAll('.chip').forEach(function(c){c.classList.remove('on');c.classList.add('off');});el.classList.remove('off');el.classList.add('on');var k=gid.replace('c-','');if(k==='obj')S.obj=el.dataset.v;if(k==='ang')S.ang=el.dataset.v;if(k==='arq')S.arq=el.dataset.v;}
+function ou(n){S.ou=n;document.querySelectorAll('.obtn').forEach(function(b,i){b.classList.toggle('on',i+1===n);});document.getElementById('oulbl').textContent=ouL[n];}
+var gsteps=['ANALISANDO ESTRATÉGIA...','DEFININDO ÂNGULO...','GERANDO VERSÃO A...','GERANDO B E C...','CALCULANDO HOOK SCORES...','FINALIZANDO...'];
+var arqM={autoridade_tecnica:'Technical Authority',visionario:'Visionary',educador:'Educator',provocador:'Provocateur',narrador:'Narrator'};
+var angM={dado_surpresa:'surprising data point',opiniao:'direct opinion',case:'personal case study',contrario:'contrarian perspective',lista:'value list'};
+var objM={autoridade:'build authority',engajamento:'drive engagement',demanda:'generate demand',networking:'expand network'};
+async function gerar(){
+  var tema=document.getElementById('tema').value.trim();
+  if(!tema){toast('DESCREVA O TEMA');return;}
+  var btn=document.getElementById('gbtn');btn.disabled=true;
+  document.getElementById('gbtntxt').textContent='GERANDO...';
+  document.getElementById('sempty').style.display='none';
+  document.getElementById('sload').style.display='block';
+  document.getElementById('sres').style.display='none';
+  document.getElementById('hookswrap').style.display='none';
+  var si=0;var iv=setInterval(function(){if(si<gsteps.length)document.getElementById('lstep').textContent=gsteps[si++];},700);
+  var pub=document.getElementById('publico').value.trim();
+  var sys='You are a LinkedIn post generator for Authority Studio. Return ONLY a raw JSON object, no markdown, no explanation. Generate 3 LinkedIn posts in Brazilian Portuguese. STRICT RULES: never use words "pede", "exige", "requer", "necessita"; never use negation-then-affirmation pattern (like "nao X, mas Y"); short paragraphs max 3 lines; direct assertive tone; no corporate cliches; no excessive punctuation. JSON: {"posts":[{"versao":"A","hook_score":85,"conteudo":"full post"},{"versao":"B","hook_score":72,"conteudo":"full post"},{"versao":"C","hook_score":65,"conteudo":"full post"}],"hooks":["hook1","hook2","hook3","hook4","hook5"]}';
+  var up='Topic: "'+tema+'"'+(pub?'. Audience: '+pub:'')+'. Goal: '+objM[S.obj]+'. Angle: '+angM[S.ang]+'. Archetype: '+arqM[S.arq]+'. Boldness: '+S.ou+'/5. A=data hook B=question hook C=contrarian hook. Plus 5 alternative hooks.';
+  try{
+    var data=await api({system:sys,messages:[{role:'user',content:up}]});
+    clearInterval(iv);
+    var raw=data.content&&data.content[0]?data.content[0].text:'';
+    var p=safeJSON(raw);
+    if(!p.posts||!p.posts.length)throw new Error('Sem posts — tente novamente');
+    renderPosts(p);
+  }catch(err){
+    clearInterval(iv);
+    document.getElementById('sload').style.display='none';
+    document.getElementById('sempty').style.display='block';
+    document.getElementById('sempty').innerHTML='<div style="font-size:24px;color:var(--red);margin-bottom:10px">!</div><div style="font-family:Syne,sans-serif;font-weight:700;font-size:12px;color:var(--red);margin-bottom:4px">ERRO AO GERAR</div><div style="font-size:12px;color:var(--red)">'+err.message+'</div>';
+    toast('ERRO — TENTE NOVAMENTE');
+  }finally{btn.disabled=false;document.getElementById('gbtntxt').textContent='GERAR 3 VERSÕES COM IA';}
+}
+function renderPosts(data){
+  document.getElementById('sload').style.display='none';
+  document.getElementById('sres').style.display='block';
+  document.getElementById('rmeta').textContent='3 VERSÕES GERADAS';
+  _posts=data.posts||[];
+  var list=document.getElementById('postslist');list.innerHTML='';
+  _posts.forEach(function(p,i){
+    var sc=p.hook_score>=80?'var(--green)':p.hook_score>=65?'#A07800':'var(--muted)';
+    var d=document.createElement('div');d.className='pi'+(i===0?' sel':'');
+    d.innerHTML='<div class="pih"><div class="piver">VERSÃO '+(p.versao||String.fromCharCode(65+i))+'</div><div class="pisc" style="color:'+sc+'">HOOK SCORE '+(p.hook_score||'—')+'/100</div></div><div class="pib coll" id="pb'+i+'">'+esc(p.conteudo||'')+'</div><div class="piacts"><button class="ab main" onclick="psel('+i+');event.stopPropagation()">USAR ESTE</button><button class="ab ghost" onclick="pexp('+i+');event.stopPropagation()">VER COMPLETO</button><button class="ab ghost" onclick="cpPost('+i+');event.stopPropagation()">COPIAR</button><button class="ab ghost" onclick="toHum('+i+');event.stopPropagation()">HUMANIZAR</button></div>';
+    d.addEventListener('click',function(){psel(i);});
+    list.appendChild(d);
+  });
+  if(data.hooks&&data.hooks.length){
+    var hl=document.getElementById('hookslist');hl.innerHTML='';
+    data.hooks.forEach(function(h,i){
+      var d=document.createElement('div');
+      d.style.cssText='display:flex;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--border)';
+      d.innerHTML='<div style="font-family:Syne,sans-serif;font-weight:800;font-size:13px;color:var(--yellow);min-width:18px">'+(i+1)+'</div><div style="font-size:15px;color:var(--navy);line-height:1.7;flex:1">'+esc(h)+'</div><button style="background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-weight:700;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);cursor:pointer;flex-shrink:0" onclick="navigator.clipboard.writeText(this.dataset.h).then(function(){toast(\'COPIADO!\');});" data-h="'+h.replace(/"/g,'&quot;')+'">COPIAR</button>';
+      hl.appendChild(d);
+    });
+    document.getElementById('hookswrap').style.display='block';
+  }
+  toast('3 VERSÕES GERADAS!');
+}
+function psel(i){document.querySelectorAll('.pi').forEach(function(el,j){el.classList.toggle('sel',j===i);});}
+function pexp(i){document.getElementById('pb'+i).classList.toggle('coll');}
+function cpPost(i){if(!_posts[i])return;navigator.clipboard.writeText(_posts[i].conteudo).then(function(){toast('POST COPIADO!');});}
+function toHum(i){if(!_posts[i])return;document.getElementById('humin').value=_posts[i].conteudo;calcOs();go('humanizer');}
+function calcOs(){
+  var t=document.getElementById('humin').value;
+  if(!t){document.getElementById('osbar').style.width='0%';document.getElementById('osval').textContent='0';return;}
+  var rw=['imperativo','alavancar','sinergia','paradigma','disruptivo','robusto','ecossistema','potencializar','stakeholder'];
+  var rc=t.toLowerCase().split(/\s+/).filter(function(w){return rw.some(function(r){return w.indexOf(r)>=0;});}).length;
+  var s=Math.max(5,Math.min(92,100-(rc*9)));
+  document.getElementById('osbar').style.width=s+'%';document.getElementById('osval').textContent=s;
+}
+async function humanizar(){
+  var t=document.getElementById('humin').value.trim();
+  if(!t){toast('COLE UM TEXTO');return;}
+  var btn=document.getElementById('hbtn');btn.disabled=true;btn.textContent='HUMANIZANDO...';
+  document.getElementById('hload').style.display='block';document.getElementById('humout').style.display='none';
+  try{
+    var data=await api({messages:[{role:'user',content:'Rewrite in Carolina Dostal style. Rules: short paragraphs max 3 lines; direct assertive tone; no words "pede/exige/requer"; no negation-affirmation pattern; no corporate cliches; no parentheses; blank line between paragraphs; Brazilian Portuguese. Return ONLY rewritten text:\n\n'+t}]});
+    var out=data.content&&data.content[0]?data.content[0].text:'';
+    document.getElementById('humout').value=out;
+    document.getElementById('humout').style.display='block';
+    document.getElementById('hload').style.display='none';
+    var sc=Math.floor(78+Math.random()*17);
+    document.getElementById('hsbar').style.width=sc+'%';document.getElementById('hsval').textContent=sc;
+    toast('TEXTO HUMANIZADO!');
+  }catch(err){toast('ERRO — TENTE NOVAMENTE');document.getElementById('hload').style.display='none';document.getElementById('humout').style.display='block';}
+  finally{btn.disabled=false;btn.textContent='HUMANIZAR AGORA';}
+}
+var aStep=0;
+function asel(gid,el){document.getElementById(gid).querySelectorAll('.sbtn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');}
+function ayn(fid,el,val){el.closest('.ynrow').querySelectorAll('.yn').forEach(function(b){b.classList.remove('on');});el.classList.add('on');document.getElementById(fid).value=val;}
+function anext(){if(aStep<4){document.getElementById('as'+aStep).style.display='none';var t=document.getElementById('st'+aStep);t.classList.remove('on');t.classList.add('done');t.querySelector('.sn').textContent='✓';aStep++;document.getElementById('as'+aStep).style.display='block';document.getElementById('st'+aStep).classList.add('on');}}
+function aprev(){if(aStep>0){document.getElementById('as'+aStep).style.display='none';document.getElementById('st'+aStep).classList.remove('on');aStep--;var t=document.getElementById('st'+aStep);t.classList.remove('done');t.classList.add('on');t.querySelector('.sn').textContent=String(aStep+1);document.getElementById('as'+aStep).style.display='block';}}
+var asteps=['ANALISANDO PERFIL...','AVALIANDO VISUAL...','ANALISANDO TEXTOS...','CALCULANDO CONSISTÊNCIA...','CALCULANDO SCORE...','GERANDO RECOMENDAÇÕES...'];
+async function analisar(){
+  var nome=document.getElementById('anome').value;if(!nome){toast('PREENCHA SEU NOME');return;}
+  var d={url:document.getElementById('aurl').value,nome:nome,setor:document.getElementById('asetor').value,objetivo:(document.getElementById('aobj').querySelector('.on')||{}).textContent||'n/a',foto:document.getElementById('afoto').value,fotoprof:document.getElementById('afotoprof').value,banner:document.getElementById('abanner').value,bannertxt:document.getElementById('abannertxt').value,headline:document.getElementById('aheadline').value,about:document.getElementById('aabout').value,cta:document.getElementById('acta').value,freq:(document.getElementById('afreq').querySelector('.on')||{}).textContent||'n/a',tempo:(document.getElementById('atempo').querySelector('.on')||{}).textContent||'n/a',featured:document.getElementById('afeatured').value,temadef:document.getElementById('atemadef').value,recs:(document.getElementById('arecs').querySelector('.on')||{}).textContent||'n/a',segs:(document.getElementById('asegs').querySelector('.on')||{}).textContent||'n/a',cert:document.getElementById('acert').value,obs:document.getElementById('aobs').value};
+  document.getElementById('as4').style.display='none';document.getElementById('aload').style.display='block';document.getElementById('ares').style.display='none';
+  var si=0;var iv=setInterval(function(){if(si<asteps.length)document.getElementById('alstep').textContent=asteps[si++];},800);
+  var sp='Analyze this LinkedIn profile. Return ONLY a raw JSON object, no markdown. Use ASCII only in all text values. Provide realistic analysis. Format: {"nome":"name","score_global":75,"score_autoridade":78,"score_clareza":72,"score_consistencia":65,"nivel":"BOM","descricao_nivel":"one sentence","campos":[{"nome":"FOTO","score":8,"diagnostico":"specific observation"},{"nome":"BANNER","score":6,"diagnostico":"specific observation"},{"nome":"HEADLINE","score":7,"diagnostico":"specific observation"},{"nome":"ABOUT","score":7,"diagnostico":"specific observation"},{"nome":"FEATURED","score":5,"diagnostico":"specific observation"},{"nome":"CONSISTENCIA","score":6,"diagnostico":"specific observation"},{"nome":"PROVA SOCIAL","score":7,"diagnostico":"specific observation"},{"nome":"POSICIONAMENTO","score":8,"diagnostico":"specific observation"}],"recomendacoes":[{"prioridade":"alta","titulo":"action","descricao":"specific recommendation","impacto":"+8 pts"},{"prioridade":"alta","titulo":"action","descricao":"specific recommendation","impacto":"+6 pts"},{"prioridade":"media","titulo":"action","descricao":"specific recommendation","impacto":"+4 pts"}]}';
+  var up='NAME:'+d.nome+' SECTOR:'+d.setor+' GOAL:'+d.objetivo+' PHOTO:'+d.foto+'/10 pro:'+d.fotoprof+' BANNER:'+d.banner+'/10 txt:'+d.bannertxt+' HEADLINE:"'+d.headline+'" ABOUT:"'+d.about.slice(0,300)+'" CTA:'+d.cta+' FREQ:'+d.freq+' TIME:'+d.tempo+' FEATURED:'+d.featured+' TOPIC:'+d.temadef+' RECS:'+d.recs+' FOLLOWERS:'+d.segs+' CERTS:'+d.cert;
+  try{
+    var data=await api({system:sp,messages:[{role:'user',content:up}]});
+    clearInterval(iv);
+    var raw=data.content&&data.content[0]?data.content[0].text:'';
+    var p=safeJSON(raw);
+    p.score_global=p.score_global||p.global_score||70;p.score_autoridade=p.score_autoridade||p.authority_score||70;p.score_clareza=p.score_clareza||p.clarity_score||70;p.score_consistencia=p.score_consistencia||p.consistency_score||70;p.nivel=p.nivel||p.level||'CONCLUIDO';p.descricao_nivel=p.descricao_nivel||p.description||'';p.campos=p.campos||p.fields||[];p.recomendacoes=p.recomendacoes||p.recommendations||[];
+    renderAudit(p);
+  }catch(err){clearInterval(iv);document.getElementById('aload').style.display='none';document.getElementById('as4').style.display='block';toast('ERRO — TENTE NOVAMENTE');}
+}
+function getC(s){return s>=8?'#1A8A5A':s>=6.5?'#A07800':s>=5?'#E67E22':'#C0392B';}
+function drawC(score){var r=38,cx=45,cy=45,circ=2*Math.PI*r,dash=circ*(score/100),col=score>=75?'#1A8A5A':score>=55?'#E67E22':'#C0392B';return '<svg viewBox="0 0 90 90"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="'+col+'" stroke-width="8" stroke-dasharray="'+dash+' '+circ+'" stroke-dashoffset="'+(circ*0.25)+'" stroke-linecap="round"/></svg>';}
+function renderAudit(d){
+  document.getElementById('aload').style.display='none';document.getElementById('ares').style.display='block';
+  for(var i=0;i<5;i++){var t=document.getElementById('st'+i);t.classList.remove('on');t.classList.add('done');}
+  var nc=d.score_global>=75?'#1A8A5A':d.score_global>=55?'#E67E22':'#C0392B';
+  var campos='';(d.campos||[]).forEach(function(c){var cor=getC(c.score||5);campos+='<div class="campo"><div class="campoh"><div class="campon">'+(c.nome||'Campo')+'</div><div class="camposc" style="color:'+cor+'">'+(c.score||5)+'</div></div><div class="campobg"><div class="campob" style="width:'+((c.score||5)*10)+'%;background:'+cor+'"></div></div><div class="campod">'+(c.diagnostico||'')+'</div></div>';});
+  var recs='';(d.recomendacoes||[]).forEach(function(r){var p=r.prioridade||'media';var lbl=p==='alta'?'CRÍTICO':p==='media'?'IMPORTANTE':'REFINAMENTO';recs+='<div class="rec '+p+'"><div class="recpri '+p+'">'+lbl+' '+(r.impacto||'')+'</div><div><div class="rect2">'+(r.titulo||'')+'</div><div class="recd">'+(r.descricao||'')+'</div></div></div>';});
+  document.getElementById('arescont').innerHTML='<div class="sbanner"><div class="scbig">'+drawC(d.score_global)+'<div class="scbign">'+d.score_global+'<span style="font-size:12px;font-weight:300;color:var(--muted)">/100</span></div></div><div><div class="scnivel" style="color:'+nc+'">'+(d.nivel||'CONCLUÍDO')+'</div><div class="scdesc">'+(d.descricao_nivel||'')+'</div></div><div class="scsub"><div class="scsubc"><div class="scsubl">AUTORIDADE</div><div class="scsubv">'+d.score_autoridade+'</div></div><div class="scsubc"><div class="scsubl">CLAREZA</div><div class="scsubv">'+d.score_clareza+'</div></div><div class="scsubc"><div class="scsubl">CONSISTÊNCIA</div><div class="scsubv">'+d.score_consistencia+'</div></div></div></div><div class="cagrid">'+campos+'</div><div class="recc"><div class="rect">PLANO DE AÇÃO PRIORIZADO</div>'+recs+'</div><div style="display:flex;gap:12px"><button style="background:transparent;color:var(--navy);font-family:Syne,sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:12px 20px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer" onclick="refAudit()">REFAZER</button><button style="background:var(--navy);color:var(--yellow);font-family:Syne,sans-serif;font-weight:700;font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:12px 20px;border:none;border-radius:8px;cursor:pointer" onclick="go(\'studio\')">IR PARA O AI CONTENT STUDIO</button></div>';
+  toast('AUDITORIA CONCLUÍDA!');
+}
+function refAudit(){aStep=0;document.getElementById('ares').style.display='none';for(var i=0;i<5;i++){var t=document.getElementById('st'+i);t.classList.remove('done','on');document.getElementById('as'+i).style.display='none';t.querySelector('.sn').textContent=String(i+1);}document.getElementById('as0').style.display='block';document.getElementById('st0').classList.add('on');}
+// NOTÍCIAS
+var _allNews=[];
+async function loadNews(){
+  document.getElementById('news-load').style.display='block';
+  document.getElementById('news-grid').style.display='none';
+  document.getElementById('news-err').style.display='none';
+  document.getElementById('news-refresh').textContent='↻ CARREGANDO...';
+  var feeds=[
+    {name:'Exame',url:'https://exame.com/feed/',cat:'Brasil'},
+    {name:'Fast Company',url:'https://www.fastcompany.com/latest/rss',cat:'Internacional'},
+    {name:'HBR',url:'https://feeds.hbr.org/harvardbusiness',cat:'Liderança'},
+    {name:'Wired',url:'https://www.wired.com/feed/rss',cat:'Tecnologia'},
+    {name:'MIT Tech Review',url:'https://www.technologyreview.com/feed/',cat:'Tecnologia'},
+  ];
+  async function fetchFeed(feed){
+    var api='https://api.rss2json.com/v1/api.json?rss_url='+encodeURIComponent(feed.url)+'&count=6&api_key=s9ub9ywyfsvhaq0qtg2pushezma270huezbybonr';
+    try{
+      var r=await fetch(api,{signal:AbortSignal.timeout(10000)});
+      var data=await r.json();
+      if(data.status==='ok'&&data.items&&data.items.length>0){
+        return data.items.slice(0,5).map(function(item){return{
+          title:(item.title||'').trim(),
+          desc:(item.description||item.content||'').replace(/<[^>]*>/g,'').trim().slice(0,220),
+          url:item.link||'',
+          date:item.pubDate||new Date().toISOString(),
+          source:feed.name,cat:feed.cat,
+          img:item.thumbnail||(item.enclosure&&item.enclosure.link)||''
+        };});
+      }
+    }catch(e){}
+    return[];
+  }
+  try{
+    var results=await Promise.allSettled(feeds.map(fetchFeed));
+    _allNews=results.filter(function(r){return r.status==='fulfilled';})
+      .flatMap(function(r){return r.value;})
+      .filter(function(a){return a.title&&a.title.length>5;})
+      .sort(function(a,b){return new Date(b.date)-new Date(a.date);})
+      .slice(0,40);
+    if(_allNews.length>0){
+      renderNews(_allNews);
+      toast(_allNews.length+' NOTÍCIAS CARREGADAS!');
+    }else{
+      document.getElementById('news-load').style.display='none';
+      document.getElementById('news-err').style.display='block';
+    }
+  }catch(err){
+    document.getElementById('news-load').style.display='none';
+    document.getElementById('news-err').style.display='block';
+  }finally{document.getElementById('news-refresh').textContent='↻ ATUALIZAR';}
+}
+function filterNews(cat,btn){
+  document.querySelectorAll('.nf').forEach(function(b){b.classList.remove('on');});btn.classList.add('on');
+  var filtered=cat==='todos'?_allNews:_allNews.filter(function(a){return a.cat===cat;});
+  renderNews(filtered);
+}
+function renderNews(articles){
+  document.getElementById('news-load').style.display='none';
+  var grid=document.getElementById('news-grid');grid.style.display='grid';grid.innerHTML='';
+  if(!articles||!articles.length){grid.innerHTML='<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--muted)"><div style="font-size:32px;margin-bottom:12px">📭</div><div style="font-family:Syne,sans-serif;font-weight:700;font-size:13px;letter-spacing:.1em;text-transform:uppercase">NENHUMA NOTÍCIA ENCONTRADA</div></div>';return;}
+  articles.forEach(function(a,i){
+    var card=document.createElement('div');card.className='nc';
+    var imgHtml=a.img?'<img class="nc-img" src="'+a.img+'" alt="" onerror="this.outerHTML=\'<div class=nc-ph>📰</div>\'">':"<div class='nc-ph'>📰</div>";
+    var date=a.date?new Date(a.date).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}):'';
+    card.innerHTML=imgHtml+'<div class="nc-body"><div class="nc-meta"><span class="nc-src">'+a.source+'</span><span class="nc-date">'+date+'</span></div><div class="nc-title">'+a.title+'</div><div class="nc-desc">'+(a.desc||'')+'</div><div class="nc-acts"><button class="nc-post" onclick="postFromNews('+i+')">✍️ CRIAR POST</button><a class="nc-read" href="'+a.url+'" target="_blank">LER →</a></div></div>';
+    grid.appendChild(card);
+  });
+}
+function postFromNews(idx){var a=_allNews[idx];if(!a)return;document.getElementById('tema').value=a.title+' ('+a.source+')';go('studio');toast('TEMA CARREGADO — CLIQUE EM GERAR!');}
+// CALENDÁRIO
+var _calPosts=[];var calsteps=['PLANEJANDO PILARES...','DISTRIBUINDO OBJETIVOS...','GERANDO SEMANA 1...','GERANDO SEMANA 2...','GERANDO SEMANA 3 E 4...','FINALIZANDO...'];
+function buildCal(posts){
+  var grid=document.getElementById('calgrid');if(!grid)return;grid.innerHTML='';
+  var days=['SEG','TER','QUA','QUI','SEX','SÁB','DOM'];
+  days.forEach(function(d){var h=document.createElement('div');h.className='calh';h.textContent=d;grid.appendChild(h);});
+  var today=new Date(),year=today.getFullYear(),month=today.getMonth();
+  var firstDay=new Date(year,month,1).getDay(),dim=new Date(year,month+1,0).getDate();
+  var offset=firstDay===0?6:firstDay-1;
+  for(var i=0;i<offset;i++){var e=document.createElement('div');e.className='cald empty';grid.appendChild(e);}
+  for(var day=1;day<=dim;day++){
+    var cell=document.createElement('div');
+    var isT=day===today.getDate();
+    var pi=posts?posts.findIndex(function(p){return p.dia===day;}):-1;
+    cell.className='cald'+(pi>=0?' has':'')+(isT?' today':'');
+    var num=document.createElement('div');num.className='caldn';num.textContent=day;cell.appendChild(num);
+    if(pi>=0){var p=posts[pi];var pill=document.createElement('div');pill.className='caldp '+(p.pilar||'pn');pill.textContent=p.tema||'Post';pill.title=p.conteudo||'';cell.appendChild(pill);}
+    grid.appendChild(cell);
+  }
+}
+async function gerarCal(){
+  var btn=document.getElementById('calbtn');btn.disabled=true;document.getElementById('calbtntxt').textContent='GERANDO...';document.getElementById('calloading').style.display='block';
+  var si=0;var iv=setInterval(function(){if(si<calsteps.length)document.getElementById('calstep').textContent=calsteps[si++];},900);
+  var sys='Generate a LinkedIn editorial calendar. Return ONLY a raw JSON object, no markdown. Format: {"posts":[{"dia":2,"tema":"short title","pilar":"pn","pilarLabel":"AUTORIDADE","horario":"08h00","conteudo":"2-3 sentence post in Brazilian Portuguese"}]}. Generate 12 posts spread through current month. Mix: 40% pn=AUTORIDADE, 30% pb=ENGAJAMENTO, 20% py=DEMANDA, 10% pg=PESSOAL.';
+  try{
+    var data=await api({system:sys,messages:[{role:'user',content:'Generate 12 LinkedIn posts for this month for a LinkedIn & Digital Marketing consultant in Brazil.'}]});
+    clearInterval(iv);var raw=data.content&&data.content[0]?data.content[0].text:'';var p=safeJSON(raw);_calPosts=p.posts||[];buildCal(_calPosts);toast('CALENDÁRIO GERADO — '+_calPosts.length+' POSTS!');
+  }catch(err){clearInterval(iv);toast('ERRO — TENTE NOVAMENTE');}
+  finally{document.getElementById('calloading').style.display='none';btn.disabled=false;document.getElementById('calbtntxt').textContent='GERAR CALENDÁRIO COM IA';}
+}
+function usarTrend(tema){document.getElementById('trendtema').value=tema;toast('TEMA SELECIONADO!');}
+var _tp='';
+async function gerarPostTrend(){
+  var tema=document.getElementById('trendtema').value.trim();if(!tema){toast('SELECIONE OU ESCREVA UM TEMA');return;}
+  var btn=document.getElementById('trendbtn');btn.disabled=true;document.getElementById('trendbtntxt').textContent='GERANDO...';document.getElementById('trendresult').style.display='none';
+  try{
+    var data=await api({messages:[{role:'user',content:'Write a LinkedIn post about "'+tema+'" in the style of Carolina Dostal. Rules: short paragraphs, direct tone, no words pede/exige/requer, no negation-affirmation pattern, no corporate cliches, Brazilian Portuguese. Return ONLY the post text.'}]});
+    _tp=data.content&&data.content[0]?data.content[0].text:'';
+    document.getElementById('trendposttext').textContent=_tp;document.getElementById('trendresult').style.display='block';toast('POST GERADO!');
+  }catch(err){toast('ERRO — TENTE NOVAMENTE');}
+  finally{btn.disabled=false;document.getElementById('trendbtntxt').textContent='GERAR POST COM IA';}
+}
+function cpTrend(){if(_tp)navigator.clipboard.writeText(_tp).then(function(){toast('POST COPIADO!');});}
+function calcF(){
+  var s1=document.getElementById('slsegs'),s2=document.getElementById('slcresc'),s3=document.getElementById('slposts');if(!s1||!s2||!s3)return;
+  var segs=parseInt(s1.value)||12847,cresc=parseInt(s2.value)||847,posts=parseInt(s3.value)||3;
+  var mult=posts<=2?0.7:posts<=4?1:posts<=5?1.3:1.6;var ca=Math.round(cresc*mult);
+  var m1=segs+ca,m2=segs+ca*2,m3=segs+ca*3,m6=segs+ca*6,m12=segs+ca*12,max=m12*1.05;
+  function fmt(n){return Math.round(n).toLocaleString('pt-BR');}
+  function pct(n){return Math.max(8,Math.round((n/max)*100))+'%';}
+  document.getElementById('lbl0').textContent=fmt(segs);document.getElementById('bar0').style.width=pct(segs);
+  document.getElementById('lbl1').textContent=fmt(m1);document.getElementById('bar1').style.width=pct(m1);
+  document.getElementById('lbl2').textContent=fmt(m2);document.getElementById('bar2').style.width=pct(m2);
+  document.getElementById('lbl3').textContent=fmt(m3);document.getElementById('bar3').style.width=pct(m3);
+  document.getElementById('lbl4').textContent=fmt(m6);document.getElementById('bar4').style.width=pct(m6);
+  document.getElementById('lbl5').textContent=fmt(m12);document.getElementById('bar5').style.width=pct(m12);
+  var d20=segs>=20000?0:Math.ceil((20000-segs)/ca*30),d50=segs>=50000?0:Math.ceil((50000-segs)/ca*30);
+  document.getElementById('meta20k').textContent=segs>=20000?'JÁ ATINGIDO':d20+' dias';
+  document.getElementById('meta50k').textContent=segs>=50000?'JÁ ATINGIDO':d50+' dias';
+  document.getElementById('meta1ano').textContent=fmt(m12);
+}
+buildCal([]);
+</script>
+</body>
+</html>
