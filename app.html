@@ -439,30 +439,136 @@ body{font-family:'Inter',sans-serif;background:var(--off);color:var(--navy);min-
       <div id="calgrid" class="calgrid"></div>
     </div>
 
-    <!-- TREND -->
-    <div id="trend" class="pane">
-      <div class="eye">TEMAS EM ALTA · ATUALIZADO HOJE</div>
-      <div class="ptitle">TREND <b>RADAR</b></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-        <div class="card"><div class="ctitle">TEMAS EM ALTA — SEU NICHO</div>
-          <div class="ti"><div class="trk">01</div><div class="tin"><div class="tnm">IA Generativa no RH e People Analytics</div><div class="tmt">+340% menções · Janela: 4 dias</div></div><span class="tbadge th">QUENTE</span><button class="ubtn" onclick="usarTrend('IA Generativa no RH e People Analytics')">USAR</button></div>
-          <div class="ti"><div class="trk">02</div><div class="tin"><div class="tnm">Liderança feminina em tech e startups</div><div class="tmt">+180% menções · Alinhado ao seu arquétipo</div></div><span class="tbadge tu">SUBINDO</span><button class="ubtn" onclick="usarTrend('Lideranca feminina em tech')">USAR</button></div>
-          <div class="ti"><div class="trk">03</div><div class="tin"><div class="tnm">Neuromarketing e decisão de compra B2B</div><div class="tmt">+95% menções · Sobreposição alta</div></div><span class="tbadge tu">SUBINDO</span><button class="ubtn" onclick="usarTrend('Neuromarketing B2B')">USAR</button></div>
-          <div class="ti"><div class="trk">04</div><div class="tin"><div class="tnm">Estratégia de conteúdo LinkedIn 2026</div><div class="tmt">Seu tema core · Saturação média</div></div><span class="tbadge tok">ESTÁVEL</span><button class="ubtn" onclick="usarTrend('Estrategia conteudo LinkedIn 2026')">USAR</button></div>
-          <div class="ti"><div class="trk">05</div><div class="tin"><div class="tnm">Branding pessoal para executivos pós-IA</div><div class="tmt">Emergente · Poucos criadores ainda</div></div><span class="tbadge tu">SUBINDO</span><button class="ubtn" onclick="usarTrend('Branding pessoal executivos pos-IA')">USAR</button></div>
-        </div>
-        <div class="card"><div class="ctitle">GERAR POST SOBRE TENDÊNCIA</div>
-          <div style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.6">Clique em USAR ou escreva um tema abaixo.</div>
-          <div class="fl"><span class="fll">TEMA SELECIONADO</span><input id="trendtema" type="text" class="inp" placeholder="Clique em USAR ou digite um tema..."></div>
-          <button class="gbtn" id="trendbtn" onclick="gerarPostTrend()"><span id="trendbtntxt">GERAR POST COM IA</span></button>
-          <div id="trendresult" style="display:none;margin-top:16px;background:var(--off);border:1.5px solid var(--border);border-radius:10px;padding:14px">
-            <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--blue);margin-bottom:10px">POST GERADO</div>
-            <div id="trendposttext" style="font-weight:400;font-size:15px;color:var(--navy);line-height:1.8;white-space:pre-wrap"></div>
-            <button onclick="cpTrend()" style="margin-top:12px;background:transparent;color:var(--navy);font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.12em;text-transform:uppercase;padding:8px 16px;border:1.5px solid var(--border);border-radius:6px;cursor:pointer">COPIAR POST</button>
-          </div>
-        </div>
-      </div>
+ <!-- TREND RADAR DINÂMICO -->
+<div id="trend" class="pane">
+  <div class="eye">TEMAS EM ALTA · ATUALIZADO A CADA HORA</div>
+  <div class="ptitle">TREND <b>RADAR</b></div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+    <span id="trend-timestamp" style="font-size:12px;color:var(--muted);">Carregando tendências...</span>
+    <button class="gbtn" onclick="carregarTrends(true)" style="width:auto;padding:8px 16px;font-size:12px;">
+      ↻ Atualizar agora
+    </button>
+  </div>
+
+  <div id="trend-loading" style="text-align:center;padding:48px;">
+    <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div style="margin-top:12px;color:var(--muted);font-size:13px;">Buscando o que está em alta agora...</div>
+  </div>
+
+  <div id="trend-grid" style="display:none;display:grid;grid-template-columns:1fr 1fr;gap:14px;"></div>
+
+  <div id="trend-error" style="display:none;text-align:center;padding:32px;color:var(--muted);">
+    <div style="font-size:32px;margin-bottom:12px;">⚡</div>
+    <div>Não foi possível carregar as tendências.</div>
+    <button class="gbtn" onclick="carregarTrends(true)" style="width:auto;padding:8px 20px;margin-top:16px;">Tentar novamente</button>
+  </div>
+
+  <div class="card" style="margin-top:20px;">
+    <div class="ctitle">GERAR POST SOBRE TENDÊNCIA</div>
+    <div style="font-size:14px;color:var(--muted);margin-bottom:14px;line-height:1.6">
+      Clique em USAR em qualquer tendência, ou escreva um tema abaixo:
     </div>
+    <div class="fl">
+      <span class="fll">TEMA SELECIONADO</span>
+      <input id="trendtema" type="text" class="inp" placeholder="Clique em USAR em uma tendência acima...">
+    </div>
+    <button class="gbtn" id="trendbtn" onclick="gerarPostTrend()">
+      <span id="trendbtntxt">GERAR POST COM IA</span>
+    </button>
+    <div id="trendresult" style="display:none;margin-top:16px;background:var(--off);border:1.5px solid var(--border);border-radius:12px;padding:20px;">
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:10px;">POST GERADO</div>
+      <div id="trendposttext" style="font-weight:400;font-size:15px;color:var(--navy);line-height:1.8;white-space:pre-wrap;"></div>
+      <button onclick="navigator.clipboard.writeText(document.getElementById('trendposttext').innerText)" 
+              style="margin-top:14px;background:none;border:1.5px solid var(--border);border-radius:8px;padding:8px 16px;font-size:12px;cursor:pointer;color:var(--muted);">
+        📋 Copiar post
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+let trendCache = null;
+let trendTimestamp = null;
+const TREND_TTL = 60 * 60 * 1000;
+
+async function carregarTrends(forcar = false) {
+  const agora = Date.now();
+  if (!forcar && trendCache && trendTimestamp && (agora - trendTimestamp < TREND_TTL)) {
+    renderTrends(trendCache);
+    return;
+  }
+  if (!forcar) {
+    try {
+      const cached = localStorage.getItem('trendCache');
+      const cachedTime = localStorage.getItem('trendTime');
+      if (cached && cachedTime && (agora - parseInt(cachedTime)) < TREND_TTL) {
+        trendCache = JSON.parse(cached);
+        trendTimestamp = parseInt(cachedTime);
+        renderTrends(trendCache);
+        return;
+      }
+    } catch(e) {}
+  }
+  document.getElementById('trend-loading').style.display = 'block';
+  document.getElementById('trend-grid').style.display = 'none';
+  document.getElementById('trend-error').style.display = 'none';
+  document.getElementById('trend-timestamp').textContent = 'Buscando tendências...';
+  try {
+    const res = await fetch('/.netlify/functions/trend');
+    if (!res.ok) throw new Error('Erro ' + res.status);
+    const data = await res.json();
+    trendCache = data;
+    trendTimestamp = Date.now();
+    try {
+      localStorage.setItem('trendCache', JSON.stringify(data));
+      localStorage.setItem('trendTime', trendTimestamp.toString());
+    } catch(e) {}
+    renderTrends(data);
+  } catch(err) {
+    document.getElementById('trend-loading').style.display = 'none';
+    document.getElementById('trend-error').style.display = 'block';
+    document.getElementById('trend-timestamp').textContent = 'Erro ao carregar';
+  }
+}
+
+function renderTrends(data) {
+  document.getElementById('trend-loading').style.display = 'none';
+  document.getElementById('trend-error').style.display = 'none';
+  const grid = document.getElementById('trend-grid');
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+  document.getElementById('trend-timestamp').textContent = 
+    '⏱ ' + (data.atualizado_em || new Date().toLocaleString('pt-BR'));
+  (data.tendencias || []).forEach(t => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div style="font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--blue);margin-bottom:6px;">${t.categoria || ''}</div>
+      <div style="font-size:14px;font-weight:700;color:var(--navy);margin-bottom:8px;line-height:1.4;">${t.titulo || ''}</div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:12px;">${t.descricao || ''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:11px;background:var(--off);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--muted);">#${t.tag || ''}</span>
+        <button onclick="usarTrend('${(t.titulo || '').replace(/'/g, "\\'")} — ${(t.descricao || '').replace(/'/g, "\\'")}')" 
+                style="font-size:11px;font-weight:700;background:var(--navy);color:#fff;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;">
+          USAR →
+        </button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function usarTrend(texto) {
+  document.getElementById('trendtema').value = texto;
+  document.getElementById('trendtema').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function iniciarAutoUpdate() {
+  carregarTrends();
+  setInterval(() => carregarTrends(), TREND_TTL);
+}
+</script>
 
     <!-- GROWTH -->
     <div id="growth" class="pane">
